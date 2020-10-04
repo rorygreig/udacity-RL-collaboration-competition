@@ -10,7 +10,6 @@ def main():
                         action='store_const', const=True, default=False)
     parsed_args = parser.parse_args()
     train = parsed_args.train
-    use_ppo = parsed_args.ppo
 
     env = TennisMultiAgentEnv("./Tennis_Linux/Tennis.x86_64")
 

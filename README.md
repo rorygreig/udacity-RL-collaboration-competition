@@ -1,5 +1,5 @@
-# Continuous Control - Udacity Deep Reinforcement Learning
-Implementation of "Continuous Control" project from Udacity Deep Reinforcement Learning Nanodegree.
+# Collaboration and Competition - Udacity Deep Reinforcement Learning
+Implementation of "Collaboration and Competition" multi-agent reinforcement learning project from Udacity Deep RL Nanodegree.
 
 This is a Deep Reinforcement Learning algorithm to solve the "Continuous Control" Unity environment, where the aim is 
 to keep a robot arm with multiple joints within a target sphere.

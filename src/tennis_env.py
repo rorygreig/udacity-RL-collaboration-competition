@@ -18,7 +18,7 @@ class TennisMultiAgentEnv(VectorEnv):
 
         env_info = self.unity_env.reset(train_mode=True)[self.brain_name]
 
-        states = env_info.vector_observations[0]
+        states = env_info.vector_observations
         self.state_size = states.shape[1]
         self.action_size = brain.vector_action_space_size
         self.num_agents = len(env_info.agents)
