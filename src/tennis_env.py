@@ -1,10 +1,8 @@
-import gym
 import numpy as np
 from gym import spaces
 from gym.vector import VectorEnv
 from unityagents import UnityEnvironment
 
-fixed_reward = 1.0
 
 class TennisMultiAgentEnv(VectorEnv):
     """Custom Environment that follows gym interface"""
@@ -26,7 +24,7 @@ class TennisMultiAgentEnv(VectorEnv):
         print('There are {} agents. Each observes a state with length: {}'.format(states.shape[0], self.state_size))
         print('The state for the first agent looks like:', states[0])
 
-        high = np.full(self.action_size, 30.0)
+        high = np.full(self.action_size, 10.0)
         self.action_space = spaces.Box(low=-high, high=high, dtype=np.float)
 
         high = np.ones(self.state_size)
@@ -39,7 +37,7 @@ class TennisMultiAgentEnv(VectorEnv):
     def step(self, actions):
         env_info = self.unity_env.step(actions)[self.brain_name]
 
-        rewards = [fixed_reward if rew > 0.0 else 0.0 for rew in env_info.rewards]
+        rewards = env_info.rewards
         dones = env_info.local_done
         next_states = env_info.vector_observations
 
