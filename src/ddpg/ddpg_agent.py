@@ -71,7 +71,8 @@ class Agent:
             action = self.actor_local(state).cpu().data.numpy()
         self.actor_local.train()
         if add_noise:
-            action += self.noise.sample()
+            # action += self.noise.sample()
+            action += self.sample_gaussian_noise()
         return np.clip(action, -1, 1)
 
     def learn(self, experiences, gamma):
@@ -129,6 +130,10 @@ class Agent:
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+
+    def sample_gaussian_noise(self, sigma=0.3):
+        return np.random.normal(0.0, sigma, self.action_size)
+
 
 class OUNoise:
     """Ornstein-Uhlenbeck process."""

@@ -21,8 +21,8 @@ class DDPG:
 
         self.agent = Agent(self.env.state_size, self.env.action_size, random_seed=10)
 
-        self.network_update_period = 4
-        self.num_network_updates = 4
+        self.network_update_period = 1
+        self.num_network_updates = 1
 
         self.checkpoint_period = 150
 
@@ -40,7 +40,7 @@ class DDPG:
 
             for t in range(max_t):
                 # get next actions from actor network
-                actions = np.array([self.agent.act(state) for state in states])
+                actions = np.array([self.agent.act(state, add_noise=True) for state in states])
                 # actions = np.random.randn(self.env.num_agents, self.env.action_size)
                 next_states, rewards, dones, _ = self.env.step(actions)
 
