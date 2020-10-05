@@ -96,7 +96,7 @@ class DDPG:
         while True:
             i += 1
             with torch.no_grad():
-                actions = np.array([self.agent.act(state) for state in states])
+                actions = np.array([self.agent.act(state, add_noise=False) for state in states])
                 next_states, rewards, dones, _ = self.env.step(actions)
                 scores += rewards
                 states = next_states

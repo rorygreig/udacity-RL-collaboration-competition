@@ -27,6 +27,12 @@ class Actor(nn.Module):
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
         self.fc3 = nn.Linear(fc2_units, action_size)
+        self.reset_parameters()
+
+    def reset_parameters(self, output_lim=1e-3):
+        self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
+        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
+        self.fc3.weight.data.uniform_(-output_lim, output_lim)
 
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""
