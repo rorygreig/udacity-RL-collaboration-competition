@@ -4,11 +4,11 @@ from collections import deque
 from tqdm import tqdm
 
 from src.ddpg.ddpg_agent import Agent
-from src.plotting import plot_scores
+from src.plotting import *
 
 
 class DDPG:
-    def __init__(self, env, target_reward=30.0):
+    def __init__(self, env, target_average_score=0.5):
         """Initialize an Agent object.
 
         Params
@@ -17,29 +17,31 @@ class DDPG:
         """
 
         self.env = env
-        self.target_reward = target_reward
+        self.target_average_score = target_average_score
 
         self.agent = Agent(self.env.state_size, self.env.action_size, random_seed=10)
 
-        self.network_update_period = 20
-        self.num_network_updates = 10
+        self.network_update_period = 4
+        self.num_network_updates = 4
 
-        self.checkpoint_period = 50
+        self.checkpoint_period = 150
 
-    def train(self, n_episodes=2000, max_t=1100):
+    def train(self, n_episodes=3000, max_t=500):
         print("Training DDPG on continuous control")
 
         recent_scores = deque(maxlen=100)
         scores = []
+        average_scores = []
 
         # run for all episodes
-        for i_episode in tqdm(range(1, n_episodes+1)):
+        for i_episode in range(1, n_episodes+1):
             states = self.env.reset()
             episode_scores = np.zeros(self.env.num_agents)
 
             for t in range(max_t):
                 # get next actions from actor network
                 actions = np.array([self.agent.act(state) for state in states])
+                # actions = np.random.randn(self.env.num_agents, self.env.action_size)
                 next_states, rewards, dones, _ = self.env.step(actions)
 
                 # store experience separately for each agent
@@ -56,22 +58,23 @@ class DDPG:
                 if np.any(dones):
                     break
 
-            score = np.mean(episode_scores) / 10
+            score = np.max(episode_scores)
             scores.append(score)
             recent_scores.append(score)
             average_score = np.mean(recent_scores)
+            average_scores.append(average_score)
 
-            print(f"\nEpisode {i_episode}\tAverage Score: {average_score:.2f}\tScore: {score:.2f}")
+            print(f"\rEpisode {i_episode}\tAverage Score: {average_score:.6f}\tScore: {score:.6f}", end="")
             if i_episode % self.checkpoint_period == 0:
                 self.store_weights('checkpoint')
-                plot_scores(scores)
-                print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(recent_scores)))
+                plot_scores_with_average(scores, average_scores)
+                print('\nEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(recent_scores)))
 
-            if average_score > self.target_reward:
+            if average_score > self.target_average_score:
                 print("Reached target average score, finishing training")
                 break
 
-        plot_scores(scores)
+        plot_scores_with_average(scores, average_scores)
         self.store_weights('final')
         self.env.close(terminate=True)
         return scores
