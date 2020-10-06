@@ -4,15 +4,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 def hidden_init(layer):
     fan_in = layer.weight.data.size()[0]
     lim = 1. / np.sqrt(fan_in)
-    return (-lim, lim)
+    return -lim, lim
+
 
 class Actor(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=100, fc2_units=64):
+    def __init__(self, state_size, action_size, seed, fc1_units=64, fc2_units=64):
         """Initialize parameters and build model.
         Params
         ======
@@ -34,6 +36,10 @@ class Actor(nn.Module):
         self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
         output_lim = self.fc2.weight.data.abs().mean() / 100
         self.fc3.weight.data.uniform_(-output_lim, output_lim)
+
+    def add_noise(self, sigma=0.1):
+        for param in self.parameters():
+            param.add_(torch.randn(param.size()) * sigma)
 
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""

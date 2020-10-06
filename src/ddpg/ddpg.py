@@ -1,7 +1,5 @@
 import torch
-import numpy as np
 from collections import deque
-from tqdm import tqdm
 
 from src.ddpg.ddpg_agent import Agent
 from src.plotting import *
@@ -41,7 +39,6 @@ class DDPG:
             for t in range(max_t):
                 # get next actions from actor network
                 actions = np.array([self.agent.act(state, add_noise=True) for state in states])
-                # actions = np.random.randn(self.env.num_agents, self.env.action_size)
                 next_states, rewards, dones, _ = self.env.step(actions)
 
                 # store experience separately for each agent
@@ -57,6 +54,8 @@ class DDPG:
                 episode_scores += rewards
                 if np.any(dones):
                     break
+
+            self.agent.update_noise()
 
             score = np.max(episode_scores)
             scores.append(score)

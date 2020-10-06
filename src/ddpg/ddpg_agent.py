@@ -49,6 +49,10 @@ class Agent:
         # Noise process
         self.noise = OUNoise(action_size, random_seed)
 
+        self.noise_reduction = 0.997
+        self.weight_noise_sigma = 0.2
+        self.action_noise_sigma = 0.01
+
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
 
@@ -63,16 +67,23 @@ class Agent:
             experiences = self.memory.sample()
             self.learn(experiences, GAMMA)
 
+    def update_noise(self):
+        self.action_noise_sigma *= self.noise_reduction
+        self.weight_noise_sigma *= self.noise_reduction
+
     def act(self, state, add_noise=True):
         """Returns actions for given state as per current policy."""
         state = torch.from_numpy(state).float().to(device)
         self.actor_local.eval()
         with torch.no_grad():
+            # add noise to parameter weights
+            if add_noise:
+                self.actor_local.add_noise(self.weight_noise_sigma)
             action = self.actor_local(state).cpu().data.numpy()
         self.actor_local.train()
         if add_noise:
             # action += self.noise.sample()
-            action += self.sample_gaussian_noise()
+            action += self.sample_gaussian_noise(sigma=self.action_noise_sigma)
         return np.clip(action, -1, 1)
 
     def learn(self, experiences, gamma):
