@@ -49,9 +49,9 @@ class Agent:
         # Noise process
         self.noise = OUNoise(action_size, random_seed)
 
-        self.noise_reduction = 0.999
-        self.weight_noise_sigma = 0.25
-        self.action_noise_sigma = 0.15
+        self.noise_reduction = 0.9999
+        self.weight_noise_sigma = 0.2
+        self.action_noise_sigma = 0.2
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
@@ -203,7 +203,7 @@ class ReplayBuffer:
         dones = torch.from_numpy(np.vstack([e.done for e in experiences if e is not None]).astype(np.uint8)).float().to(
             device)
 
-        return (states, actions, rewards, next_states, dones)
+        return states, actions, rewards, next_states, dones
 
     def __len__(self):
         """Return the current size of internal memory."""

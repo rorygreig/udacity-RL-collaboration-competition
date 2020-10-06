@@ -19,8 +19,8 @@ class DDPG:
 
         self.agent = Agent(self.env.state_size, self.env.action_size, random_seed=10)
 
-        self.network_update_period = 1
-        self.num_network_updates = 1
+        self.network_update_period = 2
+        self.num_network_updates = 8
 
         self.checkpoint_period = 150
 
@@ -45,15 +45,15 @@ class DDPG:
                 for s, a, r, s_next, d in zip(states, actions, rewards, next_states, dones):
                     self.agent.store_experience(s, a, r, s_next, d)
 
-                # periodically update actor and critic network weights
-                if t % self.network_update_period == 0:
-                    for i in range(self.num_network_updates):
-                        self.agent.update_networks()
-
                 states = next_states
                 episode_scores += rewards
                 if np.any(dones):
                     break
+
+            # periodically update actor and critic network weights
+            if i_episode % self.network_update_period == 0:
+                for i in range(self.num_network_updates):
+                    self.agent.update_networks()
 
             self.agent.update_noise()
 
@@ -75,7 +75,6 @@ class DDPG:
 
         plot_scores_with_average(scores, average_scores)
         self.store_weights('final')
-        self.env.close(terminate=True)
         return scores
 
     def store_weights(self, filename_prefix='checkpoint'):
@@ -103,6 +102,3 @@ class DDPG:
             if np.any(dones):
                 break
         print(f'Ran for {i} episodes. Final score (averaged over agents): {np.mean(scores)}')
-
-        self.env.close(terminate=True)
-
