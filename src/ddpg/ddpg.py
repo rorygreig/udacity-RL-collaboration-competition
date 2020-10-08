@@ -19,12 +19,17 @@ class DDPG:
 
         self.agent = Agent(self.env.state_size, self.env.action_size, random_seed=10)
 
-        self.network_update_period = 2
-        self.num_network_updates = 8
+        self.network_update_period = 20
+        self.num_network_updates = 4
 
-        self.checkpoint_period = 150
+        self.checkpoint_period = 500
 
-    def train(self, n_episodes=3000, max_t=500):
+        # factor by which each agent takes account of the other agents reward
+        self.reward_share_factor = 0.4
+
+        self.reward_scaling = 10.0
+
+    def train(self, n_episodes=30000, max_t=500):
         print("Training DDPG on continuous control")
 
         recent_scores = deque(maxlen=100)
@@ -32,21 +37,23 @@ class DDPG:
         average_scores = []
 
         # run for all episodes
-        for i_episode in range(1, n_episodes+1):
+        for i_episode in range(1, n_episodes + 1):
             states = self.env.reset()
             episode_scores = np.zeros(self.env.num_agents)
 
             for t in range(max_t):
                 # get next actions from actor network
                 actions = np.array([self.agent.act(state, add_noise=True) for state in states])
-                next_states, rewards, dones, _ = self.env.step(actions)
+                next_states, individual_rewards, dones, _ = self.env.step(actions)
+
+                collab_rewards = self.calculate_collab_rewards(individual_rewards)
 
                 # store experience separately for each agent
-                for s, a, r, s_next, d in zip(states, actions, rewards, next_states, dones):
+                for s, a, r, s_next, d in zip(states, actions, collab_rewards, next_states, dones):
                     self.agent.store_experience(s, a, r, s_next, d)
 
                 states = next_states
-                episode_scores += rewards
+                episode_scores += individual_rewards
                 if np.any(dones):
                     break
 
@@ -102,3 +109,11 @@ class DDPG:
             if np.any(dones):
                 break
         print(f'Ran for {i} episodes. Final score (averaged over agents): {np.mean(scores)}')
+
+    def calculate_collab_rewards(self, individual_rewards):
+        shared_rewards = np.array(individual_rewards)
+        total_reward_to_share = np.sum(shared_rewards * self.reward_share_factor)
+        for i in range(shared_rewards.shape[0]):
+            shared_rewards[i] = (1 - self.reward_share_factor) * shared_rewards[i] + total_reward_to_share
+
+        return shared_rewards * self.reward_scaling

@@ -14,7 +14,7 @@ def hidden_init(layer):
 class Actor(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=200, fc2_units=128):
+    def __init__(self, state_size, action_size, seed, fc1_units=100, fc2_units=64, fc3_units=32):
         """Initialize parameters and build model.
         Params
         ======
@@ -28,14 +28,16 @@ class Actor(nn.Module):
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
-        self.fc3 = nn.Linear(fc2_units, action_size)
+        self.fc3 = nn.Linear(fc2_units, fc3_units)
+        self.fc4 = nn.Linear(fc3_units, action_size)
         self.reset_parameters()
 
     def reset_parameters(self):
         self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
         self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        output_lim = self.fc2.weight.data.abs().mean() / 100
-        self.fc3.weight.data.uniform_(-output_lim, output_lim)
+        self.fc3.weight.data.uniform_(*hidden_init(self.fc3))
+        output_lim = self.fc3.weight.data.abs().mean() / 50
+        self.fc4.weight.data.uniform_(-output_lim, output_lim)
 
     def add_noise(self, sigma=0.1):
         for param in self.parameters():
@@ -45,13 +47,14 @@ class Actor(nn.Module):
         """Build an actor (policy) network that maps states -> actions."""
         x = F.tanh(self.fc1(state))
         x = F.tanh(self.fc2(x))
-        return F.tanh(self.fc3(x))
+        x = F.tanh(self.fc3(x))
+        return F.tanh(self.fc4(x))
 
 
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size, seed, fcs1_units=200, fc2_units=128):
+    def __init__(self, state_size, action_size, seed, fcs1_units=100, fc2_units=80):
         """Initialize parameters and build model.
         Params
         ======
