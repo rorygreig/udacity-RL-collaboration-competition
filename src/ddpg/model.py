@@ -14,7 +14,7 @@ def hidden_init(layer):
 class Actor(nn.Module):
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=128, dropout_p=0.2):
+    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=128, dropout_p=0.1):
         """Initialize parameters and build model.
         Params
         ======
@@ -44,17 +44,17 @@ class Actor(nn.Module):
 
     def forward(self, state):
         """Build an actor (policy) network that maps states -> actions."""
-        x = self.fc1(state)
-        x = F.tanh(self.dropout(x))
-        x = self.fc2(x)
-        x = F.tanh(self.dropout(x))
+        x = F.tanh(self.fc1(state))
+        x = self.dropout(x)
+        x = F.tanh(self.fc2(x))
+        x = self.dropout(x)
         return F.tanh(self.fc3(x))
 
 
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size, seed, fcs1_units=256, fc2_units=512, dropout_p=0.2):
+    def __init__(self, state_size, action_size, seed, fcs1_units=256, fc2_units=512, dropout_p=0.1):
         """Initialize parameters and build model.
         Params
         ======
@@ -81,6 +81,6 @@ class Critic(nn.Module):
         """Build a critic (value) network that maps (state, action) pairs -> Q-values."""
         xs = F.tanh(self.fcs1(state))
         x = torch.cat((xs, action), dim=1)
-        x = self.fc2(x)
-        x = F.tanh(self.dropout(x))
+        x = F.tanh(self.fc2(x))
+        x = self.dropout(x)
         return self.fc3(x)

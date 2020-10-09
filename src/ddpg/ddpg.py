@@ -25,7 +25,10 @@ class DDPG:
         self.num_network_updates = 5
 
         self.checkpoint_period = 500
-        self.noise_end_episode = 5000
+        self.noise_end_episode = 300
+        self.noise_coefficient = 1.0
+        self.noise_delta = 1.0 / self.noise_end_episode
+        self.min_noise = 0.01
 
         # factor by which each agent takes account of the other agents reward
         self.reward_share_factor = 0.8
@@ -48,7 +51,7 @@ class DDPG:
                 # get next actions from actor network
                 actions = []
                 for state, agent in zip(states, self.agents):
-                    actions.append(agent.act(state, add_noise=i_episode < self.noise_end_episode))
+                    actions.append(agent.act(state, noise_coefficient=self.noise_coefficient))
 
                 next_states, individual_rewards, dones, _ = self.env.step(actions)
 
@@ -73,8 +76,7 @@ class DDPG:
                     for agent in self.agents:
                         agent.update_networks()
 
-            for agent in self.agents:
-                agent.update_noise()
+            self.noise_coefficient = max(self.noise_coefficient - self.noise_delta, self.min_noise)
 
             score = np.max(episode_scores)
             scores.append(score)
@@ -118,7 +120,7 @@ class DDPG:
                 # actions = np.array([self.agent.act(state, add_noise=False) for state in states])
                 actions = []
                 for state, agent in zip(states, self.agents):
-                    actions.append(agent.act(state, add_noise=False))
+                    actions.append(agent.act(state, noise_coefficient=0.0))
                 next_states, rewards, dones, _ = self.env.step(actions)
                 scores += rewards
                 states = next_states
