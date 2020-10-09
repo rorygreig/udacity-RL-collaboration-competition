@@ -97,4 +97,4 @@ class Critic(nn.Module):
         # x = self.dropout(x)
         # return self.fc3(x)
         x = torch.cat((state, action), dim=1)
-        self.m(x)
+        return self.m(x)
