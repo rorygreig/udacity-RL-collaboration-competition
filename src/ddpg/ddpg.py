@@ -26,9 +26,9 @@ class DDPG:
 
         self.checkpoint_period = 500
         self.noise_end_episode = 300
-        self.noise_coefficient = 1.0
+        self.noise_coefficient = 3.0
         self.noise_delta = 1.0 / self.noise_end_episode
-        self.min_noise = 0.01
+        self.min_noise = 0.1
 
         # factor by which each agent takes account of the other agents reward
         self.reward_share_factor = 0.8

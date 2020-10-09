@@ -51,8 +51,8 @@ class Agent:
         self.noise = OUNoise(action_size, random_seed)
 
         self.noise_reduction = 0.999
-        self.weight_noise_sigma = 0.05
-        self.action_noise_sigma = 3.0
+        self.weight_noise_sigma = 0.1
+        self.action_noise_sigma = 0.3
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
