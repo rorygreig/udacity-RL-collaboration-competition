@@ -6,7 +6,7 @@ from src.ddpg.ddpg_agent import Agent
 from src.plotting import *
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
-BATCH_SIZE = 128  # minibatch size
+BATCH_SIZE = 512  # minibatch size
 
 class DDPG:
     def __init__(self, env, target_average_score=0.5, seed=1):
@@ -98,12 +98,12 @@ class DDPG:
         """Learn, if enough samples are available in memory"""
         if len(self.memory) > BATCH_SIZE:
             for i in range(self.num_network_updates):
-                for agent in self.agents:
+                for (i_agent, agent) in enumerate(self.agents):
                     # sample an experience from the replay buffer
                     experiences = self.memory.sample()
-                    self.update_single_agent(experiences, agent)
+                    self.update_single_agent(experiences, agent, i_agent)
 
-    def update_single_agent(self, experiences, agent_to_update):
+    def update_single_agent(self, experiences, agent_to_update, agent_index):
         states, actions, rewards, next_states, dones = experiences
         done, _ = torch.max(dones, dim=1)
 
@@ -123,23 +123,25 @@ class DDPG:
 
         # Update actor
         # Calculate actor local predictions
-        next_actions = self.get_next_actions(states, agent_to_update)
+        next_actions = self.get_next_actions(states, actions, agent_index)
         agent_to_update.update_actor(combined_state, next_actions)
 
     def get_next_target_actions(self, states, agent_to_update):
         next_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
-            # next_actions.append(agent.actor_target(agent_states))
             next_actions.append(agent_to_update.actor_target(agent_states))
 
         return torch.cat(next_actions, dim=1)
 
-    def get_next_actions(self, states, agent_to_update):
+    def get_next_actions(self, states, actions, agent_index):
         next_actions = []
         for (i, agent) in enumerate(self.agents):
-            agent_states = states[:, i]
-            next_actions.append(agent_to_update.actor_local(agent_states))
+            if i == agent_index:
+                agent_states = states[:, i]
+                next_actions.append(agent.actor_local(agent_states))
+            else:
+                next_actions.append(actions[:, i])
 
         return torch.cat(next_actions, dim=1)
 

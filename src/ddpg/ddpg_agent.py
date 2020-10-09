@@ -11,16 +11,14 @@ import torch.optim as optim
 LR_ACTOR = 1e-5  # learning rate of the actor
 LR_CRITIC = 1e-5  # learning rate of the critic
 WEIGHT_DECAY = 0.0  # L2 weight decay
-GAMMA = 0.99  # discount factor
+GAMMA = 0.98  # discount factor
 TAU = 1e-2  # for soft update of target parameters
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 class Agent:
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, num_agents, random_seed):
+    def __init__(self, state_size, action_size, num_agents, random_seed, dropout_p=0.1):
         """Initialize an Agent object.
 
         Params
@@ -34,15 +32,15 @@ class Agent:
         self.seed = random.seed(random_seed)
 
         # Actor Network (w/ Target Network)
-        self.actor_local = Actor(state_size, action_size, random_seed).to(device)
-        self.actor_target = Actor(state_size, action_size, random_seed).to(device)
+        self.actor_local = Actor(state_size, action_size, random_seed, dropout_p=dropout_p)
+        self.actor_target = Actor(state_size, action_size, random_seed, dropout_p=dropout_p)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
 
         # Critic Network (w/ Target Network)
         critic_state_size = num_agents * state_size
         critic_action_size = num_agents * action_size
-        self.critic_local = Critic(critic_state_size, critic_action_size, random_seed).to(device)
-        self.critic_target = Critic(critic_state_size, critic_action_size, random_seed).to(device)
+        self.critic_local = Critic(critic_state_size, critic_action_size, random_seed, dropout_p=dropout_p)
+        self.critic_target = Critic(critic_state_size, critic_action_size, random_seed, dropout_p=dropout_p)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
@@ -53,7 +51,7 @@ class Agent:
 
     def act(self, state, noise_coefficient=0.0):
         """Returns actions for given state as per current policy."""
-        state = torch.from_numpy(state).float().to(device)
+        state = torch.from_numpy(state).float()
         self.actor_local.eval()
         with torch.no_grad():
             # add noise to parameter weights
