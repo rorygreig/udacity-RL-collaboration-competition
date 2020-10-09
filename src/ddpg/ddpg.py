@@ -21,15 +21,15 @@ class DDPG:
         agent_b = Agent(self.env.state_size, self.env.action_size, self.env.num_agents, random_seed=2)
         self.agents = [agent_a, agent_b]
 
-        self.network_update_period = 20
-        self.num_network_updates = 4
+        self.network_update_period = 10
+        self.num_network_updates = 6
 
         self.checkpoint_period = 500
 
         # factor by which each agent takes account of the other agents reward
         self.reward_share_factor = 0.8
 
-        self.reward_scaling = 10.0
+        self.reward_scaling = 1.0
 
     def train(self, n_episodes=30000, max_t=500):
         print("Training DDPG on continuous control")

@@ -11,11 +11,11 @@ import torch.optim as optim
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 128  # minibatch size
-GAMMA = 0.997  # discount factor
+GAMMA = 0.99  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR_ACTOR = 1e-4  # learning rate of the actor
 LR_CRITIC = 3e-4  # learning rate of the critic
-WEIGHT_DECAY = 0.0000  # L2 weight decay
+WEIGHT_DECAY = 0.00001  # L2 weight decay
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -42,7 +42,7 @@ class Agent:
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=LR_ACTOR)
 
         # Critic Network (w/ Target Network)
-        critic_state_size = num_agents * action_size
+        critic_state_size = num_agents * state_size
         self.critic_local = Critic(critic_state_size, action_size, random_seed).to(device)
         self.critic_target = Critic(critic_state_size, action_size, random_seed).to(device)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
