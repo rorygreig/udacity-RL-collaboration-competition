@@ -50,7 +50,7 @@ class Actor(nn.Module):
         x = F.tanh(self.fc3(x))
         return F.tanh(self.fc4(x))
 
-
+# TODO: critic should have dimensions of combined states
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
