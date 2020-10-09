@@ -116,7 +116,8 @@ class DDPG:
         next_target_actions = self.get_next_target_actions(states, agent_to_update)
 
         # agent_rewards = self.calculate_collab_rewards(rewards)
-        agent_rewards, _ = torch.max(rewards, dim=1)
+        # agent_rewards, _ = torch.max(rewards, dim=1)
+        agent_rewards = rewards[:, agent_index]
 
         agent_to_update.update_critic(agent_rewards, combined_state, combined_next_state, combined_actions,
                                       next_target_actions, done)
