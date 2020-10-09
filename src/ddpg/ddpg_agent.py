@@ -82,7 +82,7 @@ class Agent:
         self.critic_optimizer.step()
 
     def update_actor(self, combined_state, combined_actions_pred):
-        actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean()
+        actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean(dim=0)
 
         # Minimize the loss
         self.actor_optimizer.zero_grad()

@@ -28,7 +28,7 @@ class DDPG:
         self.num_network_updates = 5
 
         self.checkpoint_period = 500
-        self.noise_end_episode = 4000
+        self.noise_end_episode = 300
         self.noise_coefficient = 3.0
         self.noise_delta = 1.0 / self.noise_end_episode
         self.min_noise = 0.1
@@ -116,7 +116,7 @@ class DDPG:
 
         # Update critic
         # Get predicted next-state actions from target models
-        next_target_actions = self.get_next_target_actions(states, agent_to_update)
+        next_target_actions = self.get_next_target_actions(states)
 
         # agent_rewards = self.calculate_collab_rewards(rewards)
         # agent_rewards, _ = torch.max(rewards, dim=1)
@@ -133,7 +133,7 @@ class DDPG:
         # update target networks
         agent_to_update.update_targets()
 
-    def get_next_target_actions(self, states, agent_to_update):
+    def get_next_target_actions(self, states):
         next_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]

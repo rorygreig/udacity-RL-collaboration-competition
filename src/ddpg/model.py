@@ -13,7 +13,7 @@ def hidden_init(layer):
 class Actor(nn.Module):
     """Shared network Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=128, dropout_p=0.1, activation=nn.ReLU()):
+    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=128, dropout_p=0.1, activation=nn.Tanh()):
         super(Actor, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.m = nn.Sequential(
@@ -46,7 +46,7 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self, input_size, output_size, seed, fc1_units=256, fc2_units=512, dropout_p=0.1, activation=nn.ReLU()):
+    def __init__(self, input_size, output_size, seed, fc1_units=256, fc2_units=512, dropout_p=0.1, activation=nn.Tanh()):
         """Initialize parameters and build model.
         Params
         ======
