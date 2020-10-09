@@ -28,7 +28,7 @@ class DDPG:
         self.num_network_updates = 5
 
         self.checkpoint_period = 500
-        self.noise_end_episode = 500
+        self.noise_end_episode = 4000
         self.noise_coefficient = 3.0
         self.noise_delta = 1.0 / self.noise_end_episode
         self.min_noise = 0.1
@@ -59,6 +59,8 @@ class DDPG:
                 for state, agent in zip(states, self.agents):
                     actions.append(agent.act(state, noise_coefficient=self.noise_coefficient))
 
+                actions = np.array(actions)
+
                 next_states, rewards, dones, _ = self.env.step(actions)
 
                 self.memory.add(states, actions, rewards, next_states, dones)
@@ -68,10 +70,11 @@ class DDPG:
                 if np.any(dones):
                     break
 
-            # periodically update actor and critic network weights
+            # periodically update agent network weights
             if i_episode % self.network_update_period == 0:
                 self.update_agent_networks()
 
+            # decrease noise
             self.noise_coefficient = max(self.noise_coefficient - self.noise_delta, self.min_noise)
 
             score = np.max(episode_scores)
@@ -105,7 +108,7 @@ class DDPG:
 
     def update_single_agent(self, experiences, agent_to_update, agent_index):
         states, actions, rewards, next_states, dones = experiences
-        done, _ = torch.max(dones, dim=1)
+        done = torch.sum(dones, dim=1)
 
         combined_state = torch.flatten(states, start_dim=1, end_dim=-1)
         combined_next_state = torch.flatten(next_states, start_dim=1, end_dim=-1)
@@ -127,11 +130,14 @@ class DDPG:
         next_actions = self.get_next_actions(states, actions, agent_index)
         agent_to_update.update_actor(combined_state, next_actions)
 
+        # update target networks
+        agent_to_update.update_targets()
+
     def get_next_target_actions(self, states, agent_to_update):
         next_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
-            next_actions.append(agent_to_update.actor_target(agent_states))
+            next_actions.append(agent.actor_target(agent_states))
 
         return torch.cat(next_actions, dim=1)
 
@@ -147,7 +153,7 @@ class DDPG:
         return torch.cat(next_actions, dim=1)
 
     def store_weights(self, filename_prefix='checkpoint'):
-        print("Storing weights")
+        print("\nStoring weights")
         for agent in self.agents:
             torch.save(agent.actor_local.state_dict(), "weights/" + filename_prefix + '_actor.pth')
             torch.save(agent.critic_local.state_dict(), "weights/" + filename_prefix + '_critic.pth')

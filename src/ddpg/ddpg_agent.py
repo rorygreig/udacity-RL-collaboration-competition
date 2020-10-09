@@ -39,8 +39,10 @@ class Agent:
         # Critic Network (w/ Target Network)
         critic_state_size = num_agents * state_size
         critic_action_size = num_agents * action_size
-        self.critic_local = Critic(critic_state_size, critic_action_size, random_seed, dropout_p=dropout_p)
-        self.critic_target = Critic(critic_state_size, critic_action_size, random_seed, dropout_p=dropout_p)
+        critic_input_size = critic_state_size + critic_action_size
+        critic_output_size = 1
+        self.critic_local = Critic(critic_input_size, critic_output_size, random_seed, dropout_p=dropout_p)
+        self.critic_target = Critic(critic_input_size, critic_output_size, random_seed, dropout_p=dropout_p)
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
@@ -56,7 +58,7 @@ class Agent:
         with torch.no_grad():
             # add noise to parameter weights
             self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
-            action = self.actor_local(state).cpu().data.numpy()
+            action = self.actor_local(state).data.numpy()
         self.actor_local.train()
 
         action += noise_coefficient * self.noise.sample()
@@ -68,7 +70,9 @@ class Agent:
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
         # Compute critic loss
         Q_expected = self.critic_local(combined_state, combined_actions)
-        critic_loss = F.mse_loss(Q_expected, Q_targets)
+        # critic_loss = F.mse_loss(Q_expected, Q_targets)
+        # TODO: does Q_targets need to be detached?
+        critic_loss = F.mse_loss(Q_expected, Q_targets.detach())
 
         # Minimize the loss
         self.critic_optimizer.zero_grad()
@@ -76,9 +80,6 @@ class Agent:
         # clip gradient to improve stability
         torch.nn.utils.clip_grad_norm(self.critic_local.parameters(), 1)
         self.critic_optimizer.step()
-
-        # update target network
-        self.soft_update(self.critic_local, self.critic_target, TAU)
 
     def update_actor(self, combined_state, combined_actions_pred):
         actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean()
@@ -88,7 +89,8 @@ class Agent:
         actor_loss.backward()
         self.actor_optimizer.step()
 
-        # update target network
+    def update_targets(self):
+        self.soft_update(self.critic_local, self.critic_target, TAU)
         self.soft_update(self.actor_local, self.actor_target, TAU)
 
     def soft_update(self, local_model, target_model, tau):
