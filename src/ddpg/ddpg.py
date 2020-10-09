@@ -21,10 +21,11 @@ class DDPG:
         agent_b = Agent(self.env.state_size, self.env.action_size, self.env.num_agents, random_seed=2)
         self.agents = [agent_a, agent_b]
 
-        self.network_update_period = 10
-        self.num_network_updates = 6
+        self.network_update_period = 1
+        self.num_network_updates = 5
 
         self.checkpoint_period = 500
+        self.noise_end_episode = 5000
 
         # factor by which each agent takes account of the other agents reward
         self.reward_share_factor = 0.8
@@ -47,18 +48,19 @@ class DDPG:
                 # get next actions from actor network
                 actions = []
                 for state, agent in zip(states, self.agents):
-                    actions.append(agent.act(state, add_noise=True))
+                    actions.append(agent.act(state, add_noise=i_episode < self.noise_end_episode))
 
                 next_states, individual_rewards, dones, _ = self.env.step(actions)
 
-                collab_rewards = self.calculate_collab_rewards(individual_rewards)
+                # collab_rewards = self.calculate_collab_rewards(individual_rewards)
+                reward = np.max(individual_rewards)
 
                 combined_state = np.concatenate((states[0], states[1]))
                 combined_next_state = np.concatenate((next_states[0], next_states[1]))
 
                 # store experience separately for each agent
-                for agent, s, a, r, s_next, d in zip(self.agents, states, actions, collab_rewards, next_states, dones):
-                    agent.store_experience(s, a, r, s_next, combined_state, combined_next_state, d)
+                for agent, s, a, s_next, d in zip(self.agents, states, actions, next_states, dones):
+                    agent.store_experience(s, a, reward, s_next, combined_state, combined_next_state, d)
 
                 states = next_states
                 episode_scores += individual_rewards

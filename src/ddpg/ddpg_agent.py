@@ -9,13 +9,13 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-BUFFER_SIZE = int(1e5)  # replay buffer size
+BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 128  # minibatch size
-GAMMA = 0.99  # discount factor
-TAU = 1e-3  # for soft update of target parameters
-LR_ACTOR = 1e-4  # learning rate of the actor
-LR_CRITIC = 3e-4  # learning rate of the critic
-WEIGHT_DECAY = 0.00001  # L2 weight decay
+GAMMA = 0.98  # discount factor
+TAU = 1e-2  # for soft update of target parameters
+LR_ACTOR = 1e-5  # learning rate of the actor
+LR_CRITIC = 1e-5  # learning rate of the critic
+WEIGHT_DECAY = 0.0  # L2 weight decay
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -50,9 +50,9 @@ class Agent:
         # Noise process
         self.noise = OUNoise(action_size, random_seed)
 
-        self.noise_reduction = 0.9999
-        self.weight_noise_sigma = 0.1
-        self.action_noise_sigma = 0.1
+        self.noise_reduction = 0.999
+        self.weight_noise_sigma = 0.05
+        self.action_noise_sigma = 0.3
 
         # Replay memory
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, random_seed)
