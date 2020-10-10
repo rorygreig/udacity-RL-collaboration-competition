@@ -29,15 +29,13 @@ class DDPG:
         self.num_network_updates = 5
 
         self.checkpoint_period = 200
-        self.noise_end_episode = 500
+        self.noise_end_episode = 1000
         self.noise_coefficient = 5.0
         self.noise_delta = 1.0 / self.noise_end_episode
         self.min_noise = 0.1
 
         # factor by which each agent takes account of the other agents reward
         self.reward_share_factor = 0.8
-
-        self.reward_scaling = 1.0
 
         # Replay memory
         self.memory = ReplayBuffer(self.env.action_size, BUFFER_SIZE, BATCH_SIZE, seed)
@@ -53,7 +51,7 @@ class DDPG:
         for i_episode in range(1, n_episodes + 1):
             episode_scores = self.run_episode(max_t)
 
-            score = np.max(episode_scores)
+            score = np.max(episode_scores) / 10.0
             scores.append(score)
             recent_scores.append(score)
             average_score = np.mean(recent_scores)
@@ -200,4 +198,4 @@ class DDPG:
         for i in range(shared_rewards.shape[0]):
             shared_rewards[i] = (1 - self.reward_share_factor) * shared_rewards[i] + total_reward_to_share
 
-        return shared_rewards * self.reward_scaling
+        return shared_rewards

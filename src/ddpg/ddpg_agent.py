@@ -9,9 +9,9 @@ from src.ddpg.noise import OUNoise
 from src.ddpg.util import soft_update
 
 LR_ACTOR = 1e-3  # learning rate of the actor
-LR_CRITIC = 1e-3  # learning rate of the critic
+LR_CRITIC = 2e-3  # learning rate of the critic
 WEIGHT_DECAY = 0.0  # L2 weight decay
-GAMMA = 0.97  # discount factor
+GAMMA = 0.95  # discount factor
 TAU = 1e-2  # for soft update of target parameters
 
 
@@ -75,7 +75,8 @@ class Agent:
         self.noise.reset()
 
     def update_critic(self, reward, combined_state, combined_next_state, combined_actions, combined_next_actions, dones):
-        Q_targets_next = self.critic_target(combined_next_state, combined_next_actions).squeeze(-1)
+        with torch.no_grad():
+            Q_targets_next = self.critic_target(combined_next_state, combined_next_actions).squeeze(-1)
         # Compute Q targets for current states
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
         # Compute critic loss
@@ -92,7 +93,7 @@ class Agent:
         self.critic_optimizer.step()
 
     def update_actor(self, combined_state, combined_actions_pred):
-        actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean(dim=0)
+        actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean()
 
         # Minimize the loss
         self.actor_optimizer.zero_grad()

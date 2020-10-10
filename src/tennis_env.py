@@ -37,7 +37,7 @@ class TennisMultiAgentEnv(VectorEnv):
     def step(self, actions):
         env_info = self.unity_env.step(actions)[self.brain_name]
 
-        rewards = env_info.rewards
+        rewards = np.array(env_info.rewards) * 10.0
         dones = env_info.local_done
         next_states = env_info.vector_observations
 
