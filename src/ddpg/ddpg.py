@@ -25,17 +25,17 @@ class DDPG:
         agent_b = Agent(self.env.state_size, self.env.action_size, self.env.num_agents, random_seed=2)
         self.agents = [agent_a, agent_b]
 
-        self.network_update_period = 3
+        self.network_update_period = 1
         self.num_network_updates = 5
 
         self.checkpoint_period = 200
-        self.noise_end_episode = 1000
+        self.noise_end_episode = 600
         self.noise_coefficient = 5.0
         self.noise_delta = 1.0 / self.noise_end_episode
         self.min_noise = 0.1
 
         # factor by which each agent takes account of the other agents reward
-        self.reward_share_factor = 0.8
+        # self.reward_share_factor = 0.8
 
         # Replay memory
         self.memory = ReplayBuffer(self.env.action_size, BUFFER_SIZE, BATCH_SIZE, seed)

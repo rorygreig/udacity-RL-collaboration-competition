@@ -81,9 +81,9 @@ class Agent:
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
         # Compute critic loss
         Q_expected = self.critic_local(combined_state, combined_actions).squeeze(-1)
-        # critic_loss = F.mse_loss(Q_expected, Q_targets)
-        huber_loss = torch.nn.SmoothL1Loss()
-        critic_loss = huber_loss(Q_expected, Q_targets.detach())
+        critic_loss = F.mse_loss(Q_expected, Q_targets)
+        # huber_loss = torch.nn.SmoothL1Loss()
+        # critic_loss = huber_loss(Q_expected, Q_targets.detach())
 
         # Minimize the loss
         self.critic_optimizer.zero_grad()
