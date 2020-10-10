@@ -88,7 +88,8 @@ class DDPG:
             # get next actions from actor network
             actions = []
             for state, agent in zip(states, self.agents):
-                actions.append(agent.act(state, noise_coefficient=self.noise_coefficient))
+                agent_actions = agent.act(torch.from_numpy(state).float(), noise_coefficient=self.noise_coefficient)
+                actions.append(agent_actions.data.numpy())
 
             actions = np.array(actions)
             next_states, rewards, dones, _ = self.env.step(actions)
