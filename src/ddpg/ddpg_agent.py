@@ -88,7 +88,7 @@ class Agent:
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         # clip gradient to improve stability
-        torch.nn.utils.clip_grad_norm(self.critic_local.parameters(), 1)
+        torch.nn.utils.clip_grad_norm(self.critic_local.parameters(), 1.0)
         self.critic_optimizer.step()
 
     def update_actor(self, combined_state, combined_actions_pred):

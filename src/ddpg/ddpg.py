@@ -8,6 +8,7 @@ from src.plotting import *
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 512  # minibatch size
 
+
 class DDPG:
     def __init__(self, env, target_average_score=0.5, seed=1):
         """Initialize an Agent object.
@@ -27,7 +28,7 @@ class DDPG:
         self.network_update_period = 1
         self.num_network_updates = 5
 
-        self.checkpoint_period = 500
+        self.checkpoint_period = 200
         self.noise_end_episode = 300
         self.noise_coefficient = 3.0
         self.noise_delta = 1.0 / self.noise_end_episode
