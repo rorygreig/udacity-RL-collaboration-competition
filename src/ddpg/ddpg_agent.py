@@ -1,8 +1,8 @@
 import numpy as np
 import random
-import copy
 
 from src.ddpg.model import Actor, Critic
+from src.ddpg.noise import OUNoise
 
 import torch
 import torch.nn.functional as F
@@ -46,23 +46,35 @@ class Agent:
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(), lr=LR_CRITIC, weight_decay=WEIGHT_DECAY)
 
         # Noise process
-        self.noise = OUNoise(action_size, random_seed)
 
         self.weight_noise_sigma = 0.1
         self.action_noise_sigma = 0.3
 
+        self.noise = OUNoise(action_size, scale=1.0, sigma=self.action_noise_sigma)
+
     def act(self, state, noise_coefficient=0.0):
         """Returns actions for given state as per current policy."""
-        state = torch.from_numpy(state).float()
         self.actor_local.eval()
         with torch.no_grad():
             # add noise to parameter weights
-            self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
-            action = self.actor_local(state).data.numpy()
+            # self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
+            action = self.actor_local(state) + noise_coefficient * self.noise.sample()
         self.actor_local.train()
 
-        action += noise_coefficient * self.noise.sample()
-        return np.clip(action, -1, 1)
+        return torch.clamp(action, -1, 1)
+
+    def act_target(self, state):
+        self.actor_target.eval()
+        with torch.no_grad():
+            # add noise to parameter weights
+            # self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
+            action = self.actor_target(state)
+        self.actor_target.train()
+
+        return torch.clamp(action, -1, 1)
+
+    def reset(self):
+        self.noise.reset()
 
     def update_critic(self, reward, combined_state, combined_next_state, combined_actions, combined_next_actions, dones):
         Q_targets_next = self.critic_target(combined_next_state, combined_next_actions)
@@ -109,26 +121,3 @@ class Agent:
     def sample_gaussian_noise(self, sigma=0.3):
         return np.random.normal(0.0, sigma, self.action_size)
 
-
-class OUNoise:
-    """Ornstein-Uhlenbeck process."""
-
-    def __init__(self, size, seed, mu=0., theta=0.15, sigma=0.1):
-        """Initialize parameters and noise process."""
-        self.mu = mu * np.ones(size)
-        self.theta = theta
-        self.sigma = sigma
-        np.random.seed(seed)
-        self.reset()
-
-    def reset(self):
-        """Reset the internal state (= noise) to mean (mu)."""
-        self.state = copy.copy(self.mu)
-
-    def sample(self):
-        """Update internal state and return it as a noise sample."""
-        x = self.state
-        # dx = self.theta * (self.mu - x) + self.sigma * np.array([random.random() for i in range(len(x))])
-        dx = self.theta * (self.mu - x) + self.sigma * np.random.normal(0.0, self.sigma, len(x))
-        self.state = x + dx
-        return self.state

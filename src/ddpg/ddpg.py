@@ -1,8 +1,8 @@
 import torch
-import random
-from collections import deque, namedtuple
+from collections import deque
 
 from src.ddpg.ddpg_agent import Agent
+from src.ddpg.replay_buffer import ReplayBuffer
 from src.plotting import *
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
@@ -50,38 +50,17 @@ class DDPG:
 
         # run for all episodes
         for i_episode in range(1, n_episodes + 1):
-            states = self.env.reset()
-            episode_scores = np.zeros(self.env.num_agents)
-
-            for t in range(max_t):
-                # get next actions from actor network
-                actions = []
-                for state, agent in zip(states, self.agents):
-                    actions.append(agent.act(state, noise_coefficient=self.noise_coefficient))
-
-                actions = np.array(actions)
-
-                next_states, rewards, dones, _ = self.env.step(actions)
-
-                self.memory.add(states, actions, rewards, next_states, dones)
-
-                states = next_states
-                episode_scores += rewards
-                if np.any(dones):
-                    break
-
-            # periodically update agent network weights
-            if i_episode % self.network_update_period == 0:
-                self.update_agent_networks()
-
-            # decrease noise
-            self.noise_coefficient = max(self.noise_coefficient - self.noise_delta, self.min_noise)
+            episode_scores = self.run_episode(max_t)
 
             score = np.max(episode_scores)
             scores.append(score)
             recent_scores.append(score)
             average_score = np.mean(recent_scores)
             average_scores.append(average_score)
+
+            # periodically update agent network weights
+            if i_episode % self.network_update_period == 0:
+                self.update_agent_networks()
 
             print(f"\rEpisode {i_episode}\tAverage Score: {average_score:.6f}\tScore: {score:.6f}", end="")
             if i_episode % self.checkpoint_period == 0:
@@ -97,6 +76,35 @@ class DDPG:
         self.store_weights('final')
         return scores
 
+    def run_episode(self, max_t):
+        states = self.env.reset()
+        episode_scores = np.zeros(self.env.num_agents)
+
+        # reset agent noise
+        for agent in self.agents:
+            agent.reset()
+
+        for t in range(max_t):
+            # get next actions from actor network
+            actions = []
+            for state, agent in zip(states, self.agents):
+                actions.append(agent.act(state, noise_coefficient=self.noise_coefficient))
+
+            actions = np.array(actions)
+            next_states, rewards, dones, _ = self.env.step(actions)
+
+            self.memory.add(states, actions, rewards, next_states, dones)
+
+            states = next_states
+            episode_scores += rewards
+            if np.any(dones):
+                break
+
+        # decrease noise
+        self.noise_coefficient = max(self.noise_coefficient - self.noise_delta, self.min_noise)
+
+        return episode_scores
+
     def update_agent_networks(self):
         """Learn, if enough samples are available in memory"""
         if len(self.memory) > BATCH_SIZE:
@@ -108,7 +116,6 @@ class DDPG:
 
     def update_single_agent(self, experiences, agent_to_update, agent_index):
         states, actions, rewards, next_states, dones = experiences
-        done = torch.sum(dones, dim=1)
 
         combined_state = torch.flatten(states, start_dim=1, end_dim=-1)
         combined_next_state = torch.flatten(next_states, start_dim=1, end_dim=-1)
@@ -122,8 +129,10 @@ class DDPG:
         # agent_rewards, _ = torch.max(rewards, dim=1)
         agent_rewards = rewards[:, agent_index]
 
+        agent_dones = dones[:, agent_index]
+
         agent_to_update.update_critic(agent_rewards, combined_state, combined_next_state, combined_actions,
-                                      next_target_actions, done)
+                                      next_target_actions, agent_dones)
 
         # Update actor
         # Calculate actor local predictions
@@ -137,7 +146,7 @@ class DDPG:
         next_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
-            next_actions.append(agent.actor_target(agent_states))
+            next_actions.append(agent.act_target(agent_states))
 
         return torch.cat(next_actions, dim=1)
 
@@ -190,41 +199,3 @@ class DDPG:
             shared_rewards[i] = (1 - self.reward_share_factor) * shared_rewards[i] + total_reward_to_share
 
         return shared_rewards * self.reward_scaling
-
-
-class ReplayBuffer:
-    """Fixed-size buffer to store experience tuples."""
-
-    def __init__(self, action_size, buffer_size, batch_size, seed):
-        """Initialize a ReplayBuffer object.
-        Params
-        ======
-            buffer_size (int): maximum size of buffer
-            batch_size (int): size of each training batch
-        """
-        self.action_size = action_size
-        self.memory = deque(maxlen=buffer_size)  # internal memory (deque)
-        self.batch_size = batch_size
-        self.experience = namedtuple("Experience", field_names=["states", "actions", "rewards", "next_states", "dones"])
-        self.seed = random.seed(seed)
-
-    def add(self, states, actions, rewards, next_states, dones):
-        """Add a new experience to memory."""
-        e = self.experience(states, actions, rewards, next_states, dones)
-        self.memory.append(e)
-
-    def sample(self):
-        """Randomly sample a batch of experiences from memory."""
-        experiences = random.sample(self.memory, k=self.batch_size)
-
-        states = torch.tensor([e.states for e in experiences if e is not None]).float()
-        actions = torch.tensor([e.actions for e in experiences if e is not None]).float()
-        rewards = torch.tensor([e.rewards for e in experiences if e is not None]).float()
-        next_states = torch.tensor([e.next_states for e in experiences if e is not None]).float()
-        dones = torch.tensor([e.dones for e in experiences if e is not None]).float()
-
-        return states, actions, rewards, next_states,  dones
-
-    def __len__(self):
-        """Return the current size of internal memory."""
-        return len(self.memory)
