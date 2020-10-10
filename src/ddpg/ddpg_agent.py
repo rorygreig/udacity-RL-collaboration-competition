@@ -8,10 +8,10 @@ from src.ddpg.model import Actor, Critic
 from src.ddpg.noise import OUNoise
 from src.ddpg.util import soft_update
 
-LR_ACTOR = 1e-5  # learning rate of the actor
-LR_CRITIC = 1e-5  # learning rate of the critic
+LR_ACTOR = 1e-3  # learning rate of the actor
+LR_CRITIC = 1e-3  # learning rate of the critic
 WEIGHT_DECAY = 0.0  # L2 weight decay
-GAMMA = 0.98  # discount factor
+GAMMA = 0.97  # discount factor
 TAU = 1e-2  # for soft update of target parameters
 
 
@@ -80,9 +80,7 @@ class Agent:
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
         # Compute critic loss
         Q_expected = self.critic_local(combined_state, combined_actions).squeeze(-1)
-        # critic_loss = F.mse_loss(Q_expected, Q_targets)
-        # TODO: does Q_targets need to be detached?
-        critic_loss = F.mse_loss(Q_expected, Q_targets.detach())
+        critic_loss = F.mse_loss(Q_expected, Q_targets)
 
         # Minimize the loss
         self.critic_optimizer.zero_grad()

@@ -13,15 +13,15 @@ def hidden_init(layer):
 class Actor(nn.Module):
     """Shared network Model."""
 
-    def __init__(self, state_size, action_size, seed, fc1_units=256, fc2_units=128, dropout_p=0.1, activation=nn.Tanh()):
+    def __init__(self, state_size, action_size, seed, fc1_units=64, fc2_units=64, dropout_p=0.1, activation=nn.ReLU):
         super(Actor, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.m = nn.Sequential(
             nn.Linear(state_size, fc1_units),
-            activation,
+            activation(),
             nn.Dropout(p=dropout_p),
             nn.Linear(fc1_units, fc2_units),
-            activation,
+            activation(),
             nn.Dropout(p=dropout_p),
             nn.Linear(fc2_units, action_size),
             nn.Tanh()
@@ -46,7 +46,7 @@ class Actor(nn.Module):
 class Critic(nn.Module):
     """Critic (Value) Model."""
 
-    def __init__(self, input_size, output_size, seed, fc1_units=256, fc2_units=512, dropout_p=0.1, activation=nn.Tanh()):
+    def __init__(self, input_size, output_size, seed, fc1_units=64, fc2_units=64, dropout_p=0.1, activation=nn.ReLU):
         """Initialize parameters and build model.
         Params
         ======
@@ -60,10 +60,10 @@ class Critic(nn.Module):
         self.seed = torch.manual_seed(seed)
         self.m = nn.Sequential(
             nn.Linear(input_size, fc1_units),
-            activation,
+            activation(),
             nn.Dropout(p=dropout_p),
             nn.Linear(fc1_units, fc2_units),
-            activation,
+            activation(),
             nn.Dropout(p=dropout_p),
             nn.Linear(fc2_units, output_size),
             nn.Identity()
