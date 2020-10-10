@@ -47,7 +47,7 @@ class Agent:
 
         # Noise process
 
-        self.weight_noise_sigma = 0.1
+        self.weight_noise_sigma = 0.0
         self.action_noise_sigma = 0.3
 
         self.noise = OUNoise(action_size, scale=1.0, sigma=self.action_noise_sigma)
@@ -57,7 +57,7 @@ class Agent:
         self.actor_local.eval()
         with torch.no_grad():
             # add noise to parameter weights
-            # self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
+            self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
             action = self.actor_local(state) + noise_coefficient * self.noise.sample()
         self.actor_local.train()
 
@@ -66,8 +66,6 @@ class Agent:
     def act_target(self, state):
         self.actor_target.eval()
         with torch.no_grad():
-            # add noise to parameter weights
-            # self.actor_local.add_noise(noise_coefficient * self.weight_noise_sigma)
             action = self.actor_target(state)
         self.actor_target.train()
 
