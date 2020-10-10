@@ -1,12 +1,12 @@
-import numpy as np
 import random
-
-from src.ddpg.model import Actor, Critic
-from src.ddpg.noise import OUNoise
 
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+
+from src.ddpg.model import Actor, Critic
+from src.ddpg.noise import OUNoise
+from src.ddpg.util import soft_update
 
 LR_ACTOR = 1e-5  # learning rate of the actor
 LR_CRITIC = 1e-5  # learning rate of the critic
@@ -77,11 +77,11 @@ class Agent:
         self.noise.reset()
 
     def update_critic(self, reward, combined_state, combined_next_state, combined_actions, combined_next_actions, dones):
-        Q_targets_next = self.critic_target(combined_next_state, combined_next_actions)
+        Q_targets_next = self.critic_target(combined_next_state, combined_next_actions).squeeze(-1)
         # Compute Q targets for current states
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
         # Compute critic loss
-        Q_expected = self.critic_local(combined_state, combined_actions)
+        Q_expected = self.critic_local(combined_state, combined_actions).squeeze(-1)
         # critic_loss = F.mse_loss(Q_expected, Q_targets)
         # TODO: does Q_targets need to be detached?
         critic_loss = F.mse_loss(Q_expected, Q_targets.detach())
@@ -102,22 +102,7 @@ class Agent:
         self.actor_optimizer.step()
 
     def update_targets(self):
-        self.soft_update(self.critic_local, self.critic_target, TAU)
-        self.soft_update(self.actor_local, self.actor_target, TAU)
+        soft_update(self.critic_local, self.critic_target, TAU)
+        soft_update(self.actor_local, self.actor_target, TAU)
 
-    def soft_update(self, local_model, target_model, tau):
-        """Soft update model parameters.
-        θ_target = τ*θ_local + (1 - τ)*θ_target
-
-        Params
-        ======
-            local_model: PyTorch model (weights will be copied from)
-            target_model: PyTorch model (weights will be copied to)
-            tau (float): interpolation parameter
-        """
-        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
-            target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
-
-    def sample_gaussian_noise(self, sigma=0.3):
-        return np.random.normal(0.0, sigma, self.action_size)
 
