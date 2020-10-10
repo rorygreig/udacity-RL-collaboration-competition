@@ -138,7 +138,7 @@ class DDPG:
 
         # Update actor
         # Calculate actor local predictions
-        next_actions = self.get_next_actions(states, actions, agent_index)
+        next_actions = self.get_next_actions(states, agent_index)
         agent_to_update.update_actor(combined_state, next_actions)
 
         # update target networks
@@ -148,23 +148,18 @@ class DDPG:
         target_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
-            # target_actions.append(agent.act_target(agent_states))
             target_actions.append(agent.actor_target(agent_states))
 
         return torch.cat(target_actions, dim=1)
 
-    def get_next_actions(self, states, actions, agent_index):
+    def get_next_actions(self, states, agent_index):
         next_actions = []
-        # for (i, agent) in enumerate(self.agents):
-        #     if i == agent_index:
-        #         agent_states = states[:, i]
-        #         next_actions.append(agent.actor_local(agent_states))
-        #     else:
-        #         next_actions.append(actions[:, i])
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
-            # next_actions.append(agent.act_target(agent_states))
-            next_actions.append(agent.actor_local(agent_states))
+            if i == agent_index:
+                next_actions.append(agent.actor_local(agent_states))
+            else:
+                next_actions.append(agent.actor_local(agent_states).detach())
 
         return torch.cat(next_actions, dim=1)
 
