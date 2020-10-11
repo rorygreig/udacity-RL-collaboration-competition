@@ -1,38 +1,39 @@
 # Collaboration and Competition - Udacity Deep Reinforcement Learning
 Implementation of "Collaboration and Competition" multi-agent reinforcement learning project from Udacity Deep RL Nanodegree.
 
-This is a Deep Reinforcement Learning algorithm to solve the "Continuous Control" Unity environment, where the aim is 
-to keep a robot arm with multiple joints within a target sphere.
+This is a Deep Reinforcement Learning algorithm to solve the "Tennis"" Unity environment, where the aim is 
+to train two agents to collaborate to play tennis.
 
-This project contains a solution to Version 2 of the continuous control environment, with 20 parallel agents.
+This repo contains a solution to the environment using the MADDPG algorithm for multi-agent RL.
 
-It contains implementations of both the DDPG and PPO algorithm, however only the DDPG implementation successfully solves
-the environment at present.
-
-All the code is contained in the `./src` directory, with `./src/ddpg` for the DDPG implementation and `./src/ppo` for PPO. They 
-are both run from the `src/main.py` script, and the choice of algorithm can be configured by passing a command line argument (see **"Run"** section 
-below for details).
+All the code is contained in the `./src` directory, with `./src/maddpg` for the MADDPG implementation. This 
+can be run from the `src/main.py` script (see **"Run"** section below for details).
 
 ### Environment
-The size of the state space is 33, which represents the agent's velocity and perception of nearby objects.
+The size of the state space is 24 for each agent, so 24x2, which represents each agents observations .
 
-The size of the action space is 4, which represents the torque applied to each joint.
+The size of the action space is 2 for each agent, so 2x2, which represents the lateral and vertical movement for each agent.
 
-The environment is considered solved when the agent can keep the end of the robot arm within the target sphere. 
-Roughly this corresponds to a score of 30.0, which is calculated from the average reward received by all agents in an episode. 
-Once the average score over all agents and over the most recent 100 episodes reaches this threshold 
-of 30.0 then it is considered solved and the training stops. This threshold can be changed by passing a value
- to the `target_reward` argument of the DDPG class in `src/main.py`.
+The episode ends when the agents fail to keep the ball aloft. The score for an episode is calculated as the maximum score across
+both agents.
+
+The environment is considered solved when the average score over the most recent 100 episodes reaches a threshold of 0.5. 
+When this threshold is reached the training automatically halts. This threshold can be changed by passing a value to 
+the `target_average_score` argument of the MADDPG class in `src/main.py`.
 
 ### Getting Started
 
-#### Install basic requirements
+#### Install basic requirements 
+Setup Python environment according to [these instructions](https://github.com/udacity/deep-reinforcement-learning#dependencies) 
+in the Udacity [deep-reinforcement-learning](https://github.com/udacity/deep-reinforcement-learning) repo.
+eg.
 ```
 conda activate drlnd
 pip3 install -r requirements.txt
 ```
 
 #### Install OpenAI gym
+This is required since the Unity environment is wrapped as a gym environment.
 ```
 pip3 install gym
 ```
@@ -40,23 +41,24 @@ pip3 install gym
 #### Download Unity packaged environment
 Download the version of the Unity environment for your operating system and move it to the top level of the repo. 
 
-**NB** make sure you download _Version 2_ of the environment, with 20 agents. 
+- Linux: [here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Linux.zip)
+- Mac OSX: [here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis.app.zip)
+- Windows (32-bit): [here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86.zip)
+- Windows (64-bit): [here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86_64.zip)
 
-You will also need to edit line 18 of `src/main.py` to pass the correct filepath of the environment executable to
-the `ReacherMultiAgentEnv` object.
+You will also need to edit line 14 of `src/main.py` to point to the correct filepath of the environment executable for
+the `Tennis` environment, eg.
+```
+env = TennisMultiAgentEnv("./Tennis_Linux/Tennis.x86_64")
+```
 
 #### Run
-By default the main script loads the saved neural network weights and displays the trained agent acting in the environment. So to run
-in this mode simply run:
+By default the main script loads the saved neural network weights and displays the trained agent acting in the environment. 
+So to run in this mode simply run:
 ```
 python src/main.py
 ```
 **OR** to train the neural network weights from scratch pass the `--train` flag to run in training mode:
 ```
 python src/main.py --train
-```
-
-By default the DDPG algorithm is used for training, however you can instead choose to use the PPO algorithm by passing the `--ppo` flag, eg.
-```
-python src/main.py --train --ppo
 ```
