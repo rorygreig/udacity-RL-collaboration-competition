@@ -3,7 +3,8 @@
 This project contains a solution the multi-agent "Tennis" environment, with 2 agents that are both collaborating and 
 competing in order to rally a tennis ball back and forth.
 
-I was able to solve this problem using MADDPG, the implementation is described below.
+The MADDPG algorithm for multi-agent reinforcement learning was used to solve the environment in **3506** episodes of training. 
+This implementation of MADDPG is described below.
 
 ## Implementation
 The key to MADDPG is that information from the policies of _all_ agents is used to update each agent, that way the agents
