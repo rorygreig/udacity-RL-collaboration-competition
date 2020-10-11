@@ -1,13 +1,13 @@
 # Collaboration and Competition - Udacity Deep Reinforcement Learning
-Implementation of "Collaboration and Competition" multi-agent reinforcement learning project from Udacity Deep RL Nanodegree.
+Implementation of _"Collaboration and Competition"_ multi-agent reinforcement learning project from Udacity Deep RL Nanodegree.
 
-This is a Deep Reinforcement Learning algorithm to solve the "Tennis"" Unity environment, where the aim is 
+This is a Deep Reinforcement Learning algorithm to solve the _"Tennis"_ Unity environment, where the aim is 
 to train two agents to collaborate to play tennis.
 
 This repo contains a solution to the environment using the MADDPG algorithm for multi-agent RL.
 
 All the code is contained in the `./src` directory, with `./src/maddpg` for the MADDPG implementation. This 
-can be run from the `src/main.py` script (see **"Run"** section below for details).
+can be run from the `src/main.py` script (see [Run](#run) section below for details).
 
 ### Environment
 The size of the state space is 24 for each agent, so 24x2, which represents each agents observations .
