@@ -75,15 +75,16 @@ class Agent:
         self.noise.reset()
 
     def update_critic(self, reward, combined_state, combined_next_state, combined_actions, combined_next_actions, dones):
+        """Update local critic network"""
+
         with torch.no_grad():
             Q_targets_next = self.critic_target(combined_next_state, combined_next_actions).squeeze(-1)
         # Compute Q targets for current states
         Q_targets = reward + (GAMMA * Q_targets_next * (1 - dones))
+
         # Compute critic loss
         Q_expected = self.critic_local(combined_state, combined_actions).squeeze(-1)
         critic_loss = F.mse_loss(Q_expected, Q_targets)
-        # huber_loss = torch.nn.SmoothL1Loss()
-        # critic_loss = huber_loss(Q_expected, Q_targets.detach())
 
         # Minimize the loss
         self.critic_optimizer.zero_grad()
@@ -93,6 +94,8 @@ class Agent:
         self.critic_optimizer.step()
 
     def update_actor(self, combined_state, combined_actions_pred):
+        """Update local actor network"""
+
         actor_loss = -self.critic_local(combined_state, combined_actions_pred).mean()
 
         # Minimize the loss
@@ -101,6 +104,7 @@ class Agent:
         self.actor_optimizer.step()
 
     def update_targets(self):
+        """Soft update target networks"""
         soft_update(self.critic_local, self.critic_target, TAU)
         soft_update(self.actor_local, self.actor_target, TAU)
 

@@ -16,6 +16,7 @@ class DDPG:
         Params
         ======
             env: OpenAI VectorEnv environment
+            target_average_score: the average score to stop training at
         """
 
         self.env = env
@@ -38,6 +39,8 @@ class DDPG:
         self.memory = ReplayBuffer(self.env.action_size, BUFFER_SIZE, BATCH_SIZE, seed)
 
     def train(self, n_episodes=30000, max_t=500):
+        """Run all episodes and periodically update network weights"""
+
         print("Training DDPG on continuous control")
 
         recent_scores = deque(maxlen=100)
@@ -46,15 +49,17 @@ class DDPG:
 
         # run for all episodes
         for i_episode in range(1, n_episodes + 1):
+            # Run a single episode
             episode_scores = self.run_episode(max_t)
 
-            score = np.max(episode_scores) / 10.0
+            # Keep track of scores
+            score = np.max(episode_scores) / self.env.reward_scaling  # adjust for reward scaling
             scores.append(score)
             recent_scores.append(score)
             average_score = np.mean(recent_scores)
             average_scores.append(average_score)
 
-            # periodically update agent network weights
+            # Periodically update agent network weights
             if i_episode % self.network_update_period == 0:
                 self.update_agent_networks()
 
@@ -73,10 +78,13 @@ class DDPG:
         return scores
 
     def run_episode(self, max_t):
+        """
+        Run a single episode of the environment, then update exploration noise
+        """
         states = self.env.reset()
         episode_scores = np.zeros(self.env.num_agents)
 
-        # reset agent noise
+        # reset noise for all agents
         for agent in self.agents:
             agent.reset()
 
@@ -103,7 +111,7 @@ class DDPG:
         return episode_scores
 
     def update_agent_networks(self):
-        """Learn, if enough samples are available in memory"""
+        """Learn by updating actor and critic networks for all agents, if enough samples are available in memory"""
         if len(self.memory) > BATCH_SIZE:
             for i in range(self.num_network_updates):
                 for (i_agent, agent) in enumerate(self.agents):
@@ -112,6 +120,7 @@ class DDPG:
                     self.update_single_agent(experiences, agent, i_agent)
 
     def update_single_agent(self, experiences, agent_to_update, agent_index):
+        """Update actor and critic values for an individual agent"""
         states, actions, rewards, next_states, dones = experiences
 
         combined_state = torch.flatten(states, start_dim=1, end_dim=-1)
@@ -119,7 +128,7 @@ class DDPG:
         combined_actions = torch.flatten(actions, start_dim=1, end_dim=-1)
 
         # Update critic
-        # Get predicted next-state actions from target models
+        # Get predicted next-state actions from target actor networks of both agents
         next_target_actions = self.get_next_target_actions(states)
 
         agent_rewards = rewards[:, agent_index]
@@ -129,7 +138,7 @@ class DDPG:
                                       next_target_actions, agent_dones)
 
         # Update actor
-        # Calculate actor local predictions
+        # Calculate actor local predictions using local actor networks of both agents
         next_actions = self.get_next_actions(states, agent_index)
         agent_to_update.update_actor(combined_state, next_actions)
 
@@ -137,6 +146,7 @@ class DDPG:
         agent_to_update.update_targets()
 
     def get_next_target_actions(self, states):
+        """Get target actions from all agents target actors"""
         target_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
@@ -145,6 +155,7 @@ class DDPG:
         return torch.cat(target_actions, dim=1)
 
     def get_next_actions(self, states, agent_index):
+        """Get actions from all agents local actors"""
         next_actions = []
         for (i, agent) in enumerate(self.agents):
             agent_states = states[:, i]
@@ -167,7 +178,7 @@ class DDPG:
             agent.actor_local.load_state_dict(torch.load("weights/final_actor.pth"))
 
         # run multiple episodes since they can be quite fast
-        num_episodes = 30
+        num_episodes = 20
 
         for i_episode in range(num_episodes):
             states = self.env.reset(train_mode=False)

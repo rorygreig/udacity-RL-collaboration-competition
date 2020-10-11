@@ -5,7 +5,10 @@ from unityagents import UnityEnvironment
 
 
 class TennisMultiAgentEnv(VectorEnv):
-    """Custom Environment that follows gym interface"""
+    """
+    Wrap the Tennis environment as an OpenAI gym object. This is a "VectorEnv" since it takes vectors corresponding to
+    multiple agents.
+    """
     metadata = {'render.modes': ['human']}
 
     def __init__(self, env_filepath):
@@ -30,6 +33,9 @@ class TennisMultiAgentEnv(VectorEnv):
         high = np.ones(self.state_size)
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float)
 
+        # scale the reward by a constant amount
+        self.reward_scaling = 10.0
+
         print(f"\nState size: {self.state_size}, action size: {self.action_size}, number of agents: {self.num_agents}")
 
         super(TennisMultiAgentEnv, self).__init__(self.num_agents, self.observation_space, self.action_space)
@@ -37,7 +43,7 @@ class TennisMultiAgentEnv(VectorEnv):
     def step(self, actions):
         env_info = self.unity_env.step(actions)[self.brain_name]
 
-        rewards = np.array(env_info.rewards) * 10.0
+        rewards = np.array(env_info.rewards) * self.reward_scaling
         dones = env_info.local_done
         next_states = env_info.vector_observations
 
