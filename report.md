@@ -13,9 +13,9 @@ occur with multi-agent reinforcement learning). In order to allow this the code 
 just DDPG agents themselves. Each DDPG agent has both actor and critic networks, with target and local instances.
 
 The training loop in the MADDPG _train()_ function runs many episodes, the _run_episode()_ function gets actions from the 
-local actors of both agents, then passes these to the environments and stores all the relevant data for each timestep in the replay buffer, 
-so this can be used for training (states, actions, rewards, next_states and dones).
-It returns the scores for each agent for the episode, the overall episode score is then calculated as the max score of each agent.
+local actors of both agents, then passes these to the environment and stores all the relevant data (states, actions, rewards, next_states and dones) 
+for each timestep in the replay buffer, so it can be used for training.
+It returns the scores for each agent for the episode, the overall episode score is then calculated as the max score across both agents.
 
 Periodically the `update_agent_networks()` function is called, this period is controlled by a hyperparameter (see hyperparameters section below).
 This runs the update function a given number of times (also configured as a hyperparameter) which updates the actor and critic networks for both agents.
@@ -23,17 +23,18 @@ This runs the update function a given number of times (also configured as a hype
 ### Update function
 The core update function for each agent works as follows, the code for this is in the function `MADDPG.update_single_agent()`:
 - get a minibatch of experience samples from the replay buffer
-- calculate the next target actions for **both** agents, using their target actor network and the states from the sample
-- For each agent update the critic: 
+- calculate the next target actions for **both** agents, using their target actor network and the states from the replay buffer sample.
+- For each agent update the local critic network: 
   - pass the concatenated states and actions for **both** agents to the target critic network to calculate `Q_targets_next`
   - calculate `Q_targets` using the rewards for that agent and `Q_targets_next`
   - calculate `Q_expected` using the agents local critic
   - calculate the MSE loss between `Q_targets` and `Q_expected` and minimise this loss. I also experimented with smooth Huber loss however I found this did not work well.
-- For each agent update the actor:
+- For each agent update the local actor network:
   - calculate the next actions for **both** agents, using their local actor networks and the states from the sample. I had to make sure to call PyTorch `detach()` function on the action result
- of the other agent.
+ of the other agent, so that it wasn't included in the gradient calculation.
   - calculate the actor loss by passing the concatenated states and predicted actions for **both** agents to the local critic network
   - minimise this actor loss
+- Then after the updates to the local networks have been applied, soft update the target networks for both actors and critics.
 
 There were some other notable features of the algorithm that I experimented with:
 
@@ -45,7 +46,7 @@ A minimum amount of noise was retained after this had finished decreasing. This 
 I also experimented with adding noise to the parameter weights of the neural networks, however it seemed like this harmed training performance, so this is now
 turned off.
 
-### Wrapping as a gym environment
+#### Wrapping as a gym environment
 The unity environment was wrapped as an OpenAI gym environment, which encapsulates the unity specific code and results in tidier
 code in the actual algorithm, as well as better portability between algorithms. Specifically it was wrapped as a gym `VectorEnv` environment, 
 which is an extension of the normal `gym.Env` designed for parallel environments that represent multiple environments at once, eg. they take a stacked vector of actions and 
