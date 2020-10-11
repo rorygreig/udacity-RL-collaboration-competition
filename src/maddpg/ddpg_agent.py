@@ -4,9 +4,9 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-from src.ddpg.model import Actor, Critic
-from src.ddpg.noise import OUNoise
-from src.ddpg.util import soft_update
+from src.maddpg.model import Actor, Critic
+from src.maddpg.noise import OUNoise
+from src.maddpg.util import soft_update
 
 LR_ACTOR = 1e-3  # learning rate of the actor
 LR_CRITIC = 2e-3  # learning rate of the critic

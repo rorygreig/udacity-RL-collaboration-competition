@@ -1,7 +1,7 @@
 import argparse
 from src.tennis_env import TennisMultiAgentEnv
 
-from src.ddpg.ddpg import DDPG
+from src.maddpg.maddpg import MADDPG
 
 
 def main():
@@ -13,12 +13,12 @@ def main():
 
     env = TennisMultiAgentEnv("./Tennis_Linux/Tennis.x86_64")
 
-    algo = DDPG(env)
+    maddpg = MADDPG(env)
 
     if train:
-        scores = algo.train()
+        scores = maddpg.train()
     else:
-        algo.run_with_stored_weights()
+        maddpg.run_with_stored_weights()
 
 
 if __name__ == "__main__":

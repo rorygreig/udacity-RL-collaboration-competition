@@ -1,15 +1,15 @@
 import torch
 from collections import deque
 
-from src.ddpg.ddpg_agent import Agent
-from src.ddpg.replay_buffer import ReplayBuffer
+from src.maddpg.ddpg_agent import Agent
+from src.maddpg.replay_buffer import ReplayBuffer
 from src.plotting import *
 
 BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 1024  # minibatch size
 
 
-class DDPG:
+class MADDPG:
     def __init__(self, env, target_average_score=0.5, seed=1):
         """Initialize an Agent object.
 

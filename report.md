@@ -1,43 +1,26 @@
-# Report: Continuous Control project
+# Report: Collaboration and Competition project
 
-This project contains a solution to Version 2 of the continuous control environment, with 20 parallel agents.
+This project contains a solution the multi-agent "Tennis" environment, with 2 agents that are both collaborating and 
+competing in order to rally a tennis ball back and forth.
 
-Implementations of both the DDPG and PPO algorithms were written to solve this problem. However I was unable to get the 
-PPO implementation working properly; during training the average score was stuck at around 0.4 
-and was not increasing at all. On the other hand with DDPG I was able to solve the environment and get good performance, so only
-the DDPG implementation is discussed in the rest of this report.
+I was able to solve this problem using MADDPG, the implementation is described below.
 
 ## Implementation
-### Unity environment and reward scaling 
-The unity environment was wrapped as an OpenAI gym environment, so it could be easily transferred between different
-RL algorithms. Specifically it was wrapped as a gym `VectorEnv` environment, which is an extension of the normal `gym.Env`
-designed for parallel environments that represent multiple environments at once, eg. they take a stacked vector of actions and 
-return a stacked vector of observations and rewards. This obviously fits well with this Unity environment, since it runs 20 agents at once.
+MADDPG
+
+### Wrapping as a gym environment
+The unity environment was wrapped as an OpenAI gym environment, which encapsulates the unity specific code and results in tidier
+code in the actual algorithm, as well as better portability between algorithms. Specifically it was wrapped as a gym `VectorEnv` environment, 
+which is an extension of the normal `gym.Env` designed for parallel environments that represent multiple environments at once, eg. they take a stacked vector of actions and 
+return a stacked vector of observations and rewards. This obviously fits well with this Tennis Unity environment, since it runs both agents at once and 
+returns corresponding vectors.
 
 #### Reward scaling
-I found that the rewards returned from the environment were not the same as in the project description, eg. 
-_"a reward of +0.1 is provided for each step that the agent's hand is in the goal location"_, instead the environment 
-returned reward values that were often smaller than 0.1, which seemed to be preventing the DDPG algorithm from training successfully. 
+I fuond that multiplying the rewards returned from the environment by a constant factor of 10.0 improved training performance. 
+To account for this when reporting the score for each episode I divided the score for the episode by a factor of 10.0, 
+which should result in an equivalent score as if receiving the unscaled rewards from the environment.
 
-To remedy this I changed the rewards so that if the reward for an agent was greater 
-than zero at all then the reward was set to 1.0, and 0.0 otherwise. These rewards were set to 1.0 as this was the only 
-way I could get the DDPG algorithm to train properly, even though
-according to the project description these rewards should have been 0.1. To account for this when reporting the average scores
-for each episode I divided the mean rewards for the episode by a factor of 10.0, which should be equivalent to receiving
-a reward of 0.1.
 
-### DDPG Implementation
-This implementation was based off the benchmark implementation from the project description, including features intended 
-to improve training stability such as gradient clipping, as well as only performing the network update step 10 times after every 20 timesteps. 
-In order to do this I created separated functions `store_experience()` and `update_networks()`, the first of which adds 
-the agents experience data to the ReplayBuffer and the second updates both the actor and critic networks. This means that experience 
-for all agents can be added at each timestep, but the networks updated less frequently. The number of network updates and
-the period between them were parameterised so that they can be treated as hyperparameters (see hyperparameters section below).
-
-There are also some differences from the benchmark implementation, for example I did not add the Ornstein-Uhlenbeck process noise,
-as I found that training did not work well when this noise was added (the score did not improve at all). 
-
-I also made some changes to the neural net architectures for actors and critics, see next section.
 
 #### Neural Net Architecture
 The neural net architectures for both actor and critic, as well as the training hyperparameters, were similar
@@ -86,15 +69,17 @@ critic_weight_decay | L2 weight decay for critic network | 0.0001
 
 
 ### Results
-The target score of 30.0, averaged over 100 timesteps and all 20 agents, was reached in less than **90 episodes**. The 
-score seemed to continue to increase throughout the training run, reaching above 80. This also seemed to translate into
-subjectively good performance on the task, as you can see from the recorded gif, which is a recording of the agent using
-the final trained weights. It can be observed that the arms are able to remain in the target area for almost all of the
-time, and they quickly recover if they move outside the target.
+The target score of 0.5, averaged over 100 timesteps, was reached in **3506 episodes**. The score seemed to increase
+fairly consistently, if quite slowly, over the course of the training, and seemed to be on an upward trajectory when the 
+training was automatically halted because it had reached the average score target of 0.5. I'm confident that with more 
+hyperparameter tuning this agent could reach good performance much faster.
 
-![reward by episode](img/ddpg_results_2.png "Reward")
+Subjectively the performance on the task is still not great, the agents are able to achieve rallies of a few hits back and forth,
+but they still do not seem to have attained natural looking good performance on the task. However given that the average score
+was still improving at the end of the training run, this gives confidence that better performance could be achieved by 
+training for longer or with better hyperparameter tuning.
 
-![performance](img/ddpg_performance.gif "DDPG agent performance")
+![Score by episode](img/reached_target.png "Score")
 
 ### Ideas for future work
 This project achieved good performance and fast training using DDPG, however there are many further avenues for exploration.
