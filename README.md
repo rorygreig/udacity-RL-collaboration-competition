@@ -10,7 +10,8 @@ All the code is contained in the `./src` directory, with `./src/maddpg` for the 
 can be run from the `src/main.py` script (see [Run](#run) section below for details).
 
 ### Environment
-The size of the state space is 24 for each agent, so 24x2, which represents each agents observations .
+The size of the state space is 24 for each agent, so 24x2, which represents each agent's own local observations representing 
+the position and velocity of the ball and racket.
 
 The size of the action space is 2 for each agent, so 2x2, which represents the lateral and vertical movement for each agent.
 
