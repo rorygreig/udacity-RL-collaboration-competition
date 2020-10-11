@@ -165,23 +165,23 @@ class DDPG:
         # load stored weights from training
         for agent in self.agents:
             agent.actor_local.load_state_dict(torch.load("weights/final_actor.pth"))
-            agent.critic_local.load_state_dict(torch.load("weights/final_critic.pth"))
 
-        states = self.env.reset(train_mode=False)
-        scores = np.zeros(self.env.num_agents)
+        # run multiple episodes since they can be quite fast
+        num_episodes = 30
 
-        i = 0
-        while True:
-            i += 1
-            with torch.no_grad():
-                # actions = np.array([self.agent.act(state, add_noise=False) for state in states])
-                actions = []
-                for state, agent in zip(states, self.agents):
-                    actions.append(agent.act(state, noise_coefficient=0.0))
-                next_states, rewards, dones, _ = self.env.step(actions)
-                scores += rewards
-                states = next_states
+        for i_episode in range(num_episodes):
+            states = self.env.reset(train_mode=False)
+            while True:
+                with torch.no_grad():
+                    actions = []
+                    for state, agent in zip(states, self.agents):
+                        agent_actions = agent.act(torch.from_numpy(state).float(), noise_coefficient=self.noise_coefficient)
+                        actions.append(agent_actions.data.numpy())
 
-            if np.any(dones):
-                break
-        print(f'Ran for {i} episodes. Final score (averaged over agents): {np.mean(scores)}')
+                    actions = np.array(actions)
+                    next_states, rewards, dones, _ = self.env.step(actions)
+
+                    states = next_states
+
+                if np.any(dones):
+                    break
