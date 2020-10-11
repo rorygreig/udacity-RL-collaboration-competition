@@ -34,9 +34,6 @@ class DDPG:
         self.noise_delta = 1.0 / self.noise_end_episode
         self.min_noise = 0.1
 
-        # factor by which each agent takes account of the other agents reward
-        # self.reward_share_factor = 0.8
-
         # Replay memory
         self.memory = ReplayBuffer(self.env.action_size, BUFFER_SIZE, BATCH_SIZE, seed)
 
@@ -125,10 +122,7 @@ class DDPG:
         # Get predicted next-state actions from target models
         next_target_actions = self.get_next_target_actions(states)
 
-        # agent_rewards = self.calculate_collab_rewards(rewards)
-        # agent_rewards, _ = torch.max(rewards, dim=1)
         agent_rewards = rewards[:, agent_index]
-
         agent_dones = dones[:, agent_index]
 
         agent_to_update.update_critic(agent_rewards, combined_state, combined_next_state, combined_actions,
@@ -191,11 +185,3 @@ class DDPG:
             if np.any(dones):
                 break
         print(f'Ran for {i} episodes. Final score (averaged over agents): {np.mean(scores)}')
-
-    def calculate_collab_rewards(self, individual_rewards):
-        shared_rewards = np.array(individual_rewards)
-        total_reward_to_share = np.sum(shared_rewards) * self.reward_share_factor
-        for i in range(shared_rewards.shape[0]):
-            shared_rewards[i] = (1 - self.reward_share_factor) * shared_rewards[i] + total_reward_to_share
-
-        return shared_rewards
