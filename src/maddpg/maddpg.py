@@ -41,7 +41,7 @@ class MADDPG:
     def train(self, n_episodes=30000, max_t=500):
         """Run all episodes and periodically update network weights"""
 
-        print("Training DDPG on continuous control")
+        print("Training DDPG for collaboration and competition")
 
         recent_scores = deque(maxlen=100)
         scores = []
