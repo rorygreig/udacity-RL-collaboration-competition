@@ -55,7 +55,7 @@ env = TennisMultiAgentEnv("./Tennis_Linux/Tennis.x86_64")
 
 #### Run
 By default the main script loads the saved neural network weights and displays the trained agent acting in the environment. 
-So to run in this mode simply run:
+So to run in this mode simply run the following python command from the top level directory of the repo:
 ```
 python src/main.py
 ```
