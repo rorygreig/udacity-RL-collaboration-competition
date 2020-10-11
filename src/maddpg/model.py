@@ -1,13 +1,5 @@
-import numpy as np
-
 import torch
 import torch.nn as nn
-
-
-def hidden_init(layer):
-    fan_in = layer.weight.data.size()[0]
-    lim = 1. / np.sqrt(fan_in)
-    return -lim, lim
 
 
 class Actor(nn.Module):
@@ -26,13 +18,6 @@ class Actor(nn.Module):
             nn.Linear(fc2_units, action_size),
             nn.Tanh()
         )
-        # self.reset_parameters()
-
-    def reset_parameters(self):
-        self.fc1.weight.data.uniform_(*hidden_init(self.fc1))
-        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        output_lim = self.fc3.weight.data.abs().mean() / 50
-        self.fc3.weight.data.uniform_(-output_lim, output_lim)
 
     def add_noise(self, sigma=0.1):
         for param in self.parameters():
@@ -68,12 +53,6 @@ class Critic(nn.Module):
             nn.Linear(fc2_units, output_size),
             nn.Identity()
         )
-        # self.reset_parameters()
-
-    def reset_parameters(self):
-        self.fcs1.weight.data.uniform_(*hidden_init(self.fcs1))
-        self.fc2.weight.data.uniform_(*hidden_init(self.fc2))
-        self.fc3.weight.data.uniform_(-3e-3, 3e-3)
 
     def forward(self, state, action):
         """Build a critic (value) network that maps (state, action) pairs -> Q-values."""

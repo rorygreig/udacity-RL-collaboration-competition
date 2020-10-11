@@ -6,7 +6,21 @@ competing in order to rally a tennis ball back and forth.
 I was able to solve this problem using MADDPG, the implementation is described below.
 
 ## Implementation
-MADDPG
+The key to MADDPG is that information from the policies of _all_ agents is used to update each agent, that way the agents
+training can take into account the predicted actions of other actions (this prevents problems with non-stationarity that
+occur with multi-agent reinforcement learning). In order to allow this the code is structured with a top level `MADDPG` class 
+(in `src/main/maddpg.py`) which contains both individual agents, which are instances of the `DDPG` class, because they are essentially
+just DDPG agents themselves. Each DDPG agent has both actor and critic networks, with target and local instances.
+
+### Update function
+
+
+Some specific notable features are... 
+
+Exploration noise...
+
+I experimented with adding noise to the parameter weights, however it seemed like this harmed training performance, so this is now
+turned off
 
 ### Wrapping as a gym environment
 The unity environment was wrapped as an OpenAI gym environment, which encapsulates the unity specific code and results in tidier
